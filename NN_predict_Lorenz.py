@@ -46,17 +46,17 @@ import torch
 from torch import nn 
 from torch import optim
 
-model = nn.Sequential(nn.Linear(3,10), nn.RelU(), nn.Linear(10, 10), nn.ReLU(), nn.Linear(10,10), nn.ReLU(), nn.Linear())
+model = nn.Sequential(nn.Linear(3,10), nn.ReLU(), nn.Linear(10, 10), nn.ReLU(), nn.Linear(10,10), nn.ReLU(), nn.Linear(10,3))
 
-model.to(device = torch.device('cuda:4'))
+model.to(device = torch.device('cuda:1'))
 
-criterion = nn.MSELoss()
+criterion = nn.MSELoss().to(device=torch.device('cuda:1'))
 optimizer = optim.SGD(model.parameters(), lr = 0.0001)
 
 ## turn intup and output into tensors
 
-nn_input = torch.from_numpy(nn_input.astype(np.float64), device=torch.device('cuda:4'))
-nn_output = torch.from_numpy(nn_output.astype(np.float64), device=torch.device('cuda:4'))
+nn_input = torch.from_numpy(nn_input.astype(np.float64)).to(device=torch.device('cuda:1'))
+nn_output = torch.from_numpy(nn_output.astype(np.float64)).to(device=torch.device('cuda:1'))
 
 
 ## train for 5000 epochs
@@ -69,9 +69,11 @@ for e in range(epochs):
         optimizer.zero_grad()
         output = model(nn_input[i].float())
         loss = criterion(output,nn_output[i].float())
-        loss.backward
+        loss.backward()
         optimizer.step()
-        running_loss += loss.item()
 
-    loss[e] = running_loss/(nn_input.shape[0])
-    
+        running_loss += loss.cpu().item()
+
+    training_loss[e] = running_loss/(nn_input.shape[0])
+    if not(e%100):
+        print(f"Training loss: {running_loss/nn_input.shape[0]}")    
